@@ -1,23 +1,21 @@
 const axios = require('axios');
 
-const faucetUrl = "http://localhost:3000/claim"; // Assure-toi que c'est bien ton URL
-const address = "0x39DF80AD33A7FD0bEc56E41a101F8Dde4023654F";  // L'adresse à laquelle tu veux envoyer les MON
+const faucetUrl = "http://localhost:3000/claim"; // Make sure this is your correct URL
+const address = "0x39DF80AD33A7FD0bEc56E41a101F8Dde4023654F";  // The address to receive MON tokens
 
-axios.post(faucetUrl, {
-  address: address,
-})
+axios.post(faucetUrl, { address })
   .then(response => {
-    console.log("Réponse du Faucet:", response.data);
+    console.log("Faucet Response:", response.data);
   })
   .catch(error => {
     if (error.response) {
-      // Le serveur a répondu avec un code d'erreur
-      console.log("Erreur de la réponse du serveur:", error.response.data);
+      // The server responded with an error status
+      console.error("Server Response Error:", error.response.data);
     } else if (error.request) {
-      // Aucune réponse n'a été reçue
-      console.log("Erreur de la requête:", error.request);
+      // No response received
+      console.error("No Response from Server:", error.request);
     } else {
-      // Une autre erreur a eu lieu
-      console.log("Erreur:", error.message);
+      // Other errors
+      console.error("Request Error:", error.message);
     }
   });

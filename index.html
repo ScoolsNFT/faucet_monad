@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Faucet Ethereum</title>
+  <title>Scools Monad Faucet</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,12 +12,13 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background-color: #f3f3f3;
+      background-color: #000;
       margin: 0;
+      color: white;
     }
 
     h1 {
-      font-size: 24px;
+      font-size: 32px;
       margin-bottom: 20px;
     }
 
@@ -28,7 +29,7 @@
       cursor: pointer;
       border: none;
       border-radius: 5px;
-      background-color: #4CAF50;
+      background-color: #8a2be2; /* Couleur violet */
       color: white;
     }
 
@@ -40,7 +41,7 @@
     #userAddress {
       margin: 15px 0;
       font-size: 18px;
-      color: #333;
+      color: #fff;
     }
 
     #status {
@@ -48,18 +49,23 @@
       font-size: 18px;
       color: #555;
     }
+
+    /* Centrer les éléments sur la page */
+    .container {
+      text-align: center;
+    }
   </style>
 </head>
 <body>
-  <div>
-    <h1>Faucet Ethereum - Réclame tes MON !</h1>
+  <div class="container">
+    <h1>Scools Monad Faucet</h1>
     
-    <button id="connectButton">Connecter MetaMask</button>
+    <button id="connectButton">Connect Wallet</button>
     
-    <p id="userAddress">Adresse : Non connectée</p>
+    <p id="userAddress">Address: Not connected</p>
     <p id="status"></p>
 
-    <button id="claimButton" disabled>Réclamer des fonds</button>
+    <button id="claimButton" disabled>Claim MON</button>
   </div>
 
   <!-- Utilisation d'un autre CDN pour ethers.js -->
@@ -72,13 +78,9 @@
     // Fonction de connexion MetaMask
     async function connectMetaMask() {
       console.log("Tentative de connexion à MetaMask...");
-      try {
-        // Vérifier si MetaMask est installé uniquement au moment du clic
-        if (window.ethereum) {
-          console.log("MetaMask est détecté");
-
+      if (window.ethereum) {
+        try {
           provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-
           // Demander l'accès aux comptes MetaMask
           const accounts = await provider.send('eth_requestAccounts', []);
           console.log("Comptes MetaMask récupérés:", accounts);
@@ -89,19 +91,19 @@
           console.log('Compte MetaMask connecté:', userAddress);
 
           // Afficher l'adresse de l'utilisateur
-          document.getElementById('userAddress').textContent = `Adresse : ${userAddress}`;
-          document.getElementById('status').textContent = "Connecté à MetaMask !";
+          document.getElementById('userAddress').textContent = `Address: ${userAddress}`;
+          document.getElementById('status').textContent = "Connected to MetaMask!";
           document.getElementById('status').style.color = "green";
           
           // Activer le bouton de réclamation
           document.getElementById('claimButton').disabled = false;
-        } else {
-          console.log("MetaMask n'est pas installé");
-          alert("MetaMask n'est pas installé. Veuillez installer MetaMask pour continuer.");
+        } catch (err) {
+          console.error("Erreur de connexion à MetaMask", err);
+          alert("Erreur de connexion à MetaMask.");
         }
-      } catch (err) {
-        console.error("Erreur de connexion à MetaMask", err);
-        alert("Erreur de connexion à MetaMask.");
+      } else {
+        console.log("MetaMask n'est pas installé");
+        alert("MetaMask n'est pas installé. Veuillez installer MetaMask pour continuer.");
       }
     }
 
@@ -123,7 +125,7 @@
         if (data.error) {
           alert(data.error);
         } else {
-          alert(`Succès ! ${data.message}, Transaction Hash: ${data.txHash}`);
+          alert(`Success! ${data.message}, Transaction Hash: ${data.txHash}`);
         }
       } catch (error) {
         console.error("Erreur lors de la réclamation des fonds:", error);

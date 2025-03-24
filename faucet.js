@@ -1,66 +1,66 @@
-// Importation des librairies
+// Import required libraries
 const express = require('express');
 const { ethers } = require('ethers');
-require('dotenv').config(); // Chargement des variables d'environnement
+require('dotenv').config(); // Load environment variables
 
-// Initialisation de l'application Express
+// Initialize Express app
 const app = express();
 app.use(express.json());
 
-// Configuration du provider et du wallet
-const provider = new ethers.JsonRpcProvider("https://testnet-rpc.monad.xyz"); // Remplace avec ton RPC
+// Configure provider and wallet
+const provider = new ethers.JsonRpcProvider("https://testnet-rpc.monad.xyz"); // Replace with your RPC
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY; // Stocke ta clé privée dans un fichier .env !
+const PRIVATE_KEY = process.env.PRIVATE_KEY; // Store your private key in a .env file!
 if (!PRIVATE_KEY) {
-    console.error("❌ ERREUR: Clé privée manquante ! Ajoute-la dans un fichier .env");
+    console.error("❌ ERROR: Missing private key! Add it to a .env file.");
     process.exit(1);
 }
 
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 const FAUCET_AMOUNT = ethers.parseUnits("0.15", 18); // 0.15 MON
 
-// Stockage des adresses qui ont déjà réclamé (1 seule fois par adresse)
+// Track addresses that have already claimed (one claim per address)
 const claimedAddresses = new Set();
 
-// Route pour réclamer des fonds
+// Faucet claim route
 app.post('/claim', async (req, res) => {
     const { address } = req.body;
 
-    // Vérification de l'adresse
+    // Validate address
     if (!address || !ethers.isAddress(address)) {
-        return res.status(400).json({ error: "Adresse invalide" });
+        return res.status(400).json({ error: "Invalid address" });
     }
 
-    // Vérifie si l'adresse a déjà réclamé
+    // Check if address has already claimed
     if (claimedAddresses.has(address)) {
-        return res.status(400).json({ error: "Vous avez déjà réclamé une fois." });
+        return res.status(400).json({ error: "You have already claimed once." });
     }
 
     try {
-        console.log(`🔄 Envoi de 0.15 MON à ${address}...`);
+        console.log(`🔄 Sending 0.15 MON to ${address}...`);
 
-        // Création et envoi de la transaction
+        // Create and send transaction
         const tx = await wallet.sendTransaction({
             to: address,
             value: FAUCET_AMOUNT
         });
 
-        // Attendre la confirmation
+        // Wait for confirmation
         await tx.wait();
-        console.log(`✅ Transaction confirmée: ${tx.hash}`);
+        console.log(`✅ Transaction confirmed: ${tx.hash}`);
 
-        // Marquer l'adresse comme ayant réclamé
+        // Mark the address as claimed
         claimedAddresses.add(address);
 
-        res.json({ message: "0.15 MON envoyés avec succès!", txHash: tx.hash });
+        res.json({ message: "0.15 MON successfully sent!", txHash: tx.hash });
     } catch (error) {
-        console.error("❌ Erreur lors de l'envoi:", error);
+        console.error("❌ Error sending transaction:", error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Démarrer le serveur
+// Start the server
 const PORT = 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Faucet actif sur http://localhost:${PORT}`);
+    console.log(`🚀 Faucet is live at http://localhost:${PORT}`);
 });
