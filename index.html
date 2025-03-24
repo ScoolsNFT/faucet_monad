@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Faucet Ethereum</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f3f3f3;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 10px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    #userAddress {
+      margin: 15px 0;
+      font-size: 18px;
+      color: #333;
+    }
+
+    #status {
+      margin: 20px;
+      font-size: 18px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>Faucet Ethereum - Réclame tes MON !</h1>
+    
+    <button id="connectButton">Connecter MetaMask</button>
+    
+    <p id="userAddress">Adresse : Non connectée</p>
+    <p id="status"></p>
+
+    <button id="claimButton" disabled>Réclamer des fonds</button>
+  </div>
+
+  <!-- Utilisation d'un autre CDN pour ethers.js -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.2.0/dist/ethers.umd.min.js"></script>
+  <script>
+    let provider;
+    let signer;
+    let userAddress;
+
+    // Fonction de connexion MetaMask
+    async function connectMetaMask() {
+      console.log("Tentative de connexion à MetaMask...");
+      try {
+        // Vérifier si MetaMask est installé uniquement au moment du clic
+        if (window.ethereum) {
+          console.log("MetaMask est détecté");
+
+          provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+
+          // Demander l'accès aux comptes MetaMask
+          const accounts = await provider.send('eth_requestAccounts', []);
+          console.log("Comptes MetaMask récupérés:", accounts);
+
+          // Récupérer l'adresse du premier compte
+          signer = provider.getSigner();
+          userAddress = await signer.getAddress();
+          console.log('Compte MetaMask connecté:', userAddress);
+
+          // Afficher l'adresse de l'utilisateur
+          document.getElementById('userAddress').textContent = `Adresse : ${userAddress}`;
+          document.getElementById('status').textContent = "Connecté à MetaMask !";
+          document.getElementById('status').style.color = "green";
+          
+          // Activer le bouton de réclamation
+          document.getElementById('claimButton').disabled = false;
+        } else {
+          console.log("MetaMask n'est pas installé");
+          alert("MetaMask n'est pas installé. Veuillez installer MetaMask pour continuer.");
+        }
+      } catch (err) {
+        console.error("Erreur de connexion à MetaMask", err);
+        alert("Erreur de connexion à MetaMask.");
+      }
+    }
+
+    // Fonction de réclamation de fonds
+    async function claimFunds() {
+      console.log("Tentative de réclamation de fonds pour l'adresse:", userAddress);
+      try {
+        const response = await fetch('http://localhost:3000/claim', { // Assurez-vous de bien définir votre URL de serveur
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ address: userAddress })
+        });
+
+        const data = await response.json();
+        console.log("Réponse de la réclamation:", data);
+
+        if (data.error) {
+          alert(data.error);
+        } else {
+          alert(`Succès ! ${data.message}, Transaction Hash: ${data.txHash}`);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la réclamation des fonds:", error);
+        alert('Erreur lors de la réclamation des fonds.');
+      }
+    }
+
+    // Ajouter les événements des boutons
+    document.getElementById('connectButton').addEventListener('click', connectMetaMask);
+    document.getElementById('claimButton').addEventListener('click', claimFunds);
+  </script>
+</body>
+</html>
