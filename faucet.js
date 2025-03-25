@@ -8,8 +8,9 @@ const app = express();
 app.use(express.json());
 
 // Route pour la page d'accueil
+const path = require("path"); // Ajouter la bibliothèque 'path' pour gérer les chemins de fichiers
 app.get("/", (req, res) => {
-  res.send("Faucet Monad API en ligne 🚀");
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 // Configure provider and wallet
