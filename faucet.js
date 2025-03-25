@@ -1,19 +1,24 @@
 // Import required libraries
-const express = require('express');
-const { ethers } = require('ethers');
-require('dotenv').config(); // Load environment variables
+const express = require("express");
+const { ethers } = require("ethers");
+require("dotenv").config(); // Load environment variables
 
 // Initialize Express app
 const app = express();
 app.use(express.json());
+
+// Route pour la page d'accueil
+app.get("/", (req, res) => {
+  res.send("Faucet Monad API en ligne 🚀");
+});
 
 // Configure provider and wallet
 const provider = new ethers.JsonRpcProvider("https://testnet-rpc.monad.xyz");
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY; // Store your private key in a .env file!
 if (!PRIVATE_KEY) {
-    console.error("❌ ERROR: Missing private key! Add it to a .env file.");
-    process.exit(1);
+  console.error("❌ ERROR: Missing private key! Add it to a .env file.");
+  process.exit(1);
 }
 
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
@@ -88,49 +93,49 @@ const eligibleAddresses = new Set([
 ]);
 
 // Faucet claim route
-app.post('/', async (req, res) => {  // Changez '/claim' en '/'
-    const { address } = req.body;
+app.post("/", async (req, res) => {
+  const { address } = req.body;
 
-    // Validate address
-    if (!address || !ethers.utils.isAddress(address)) {
-        return res.status(400).json({ error: "Invalid address" });
-    }
+  // Validate address
+  if (!address || !ethers.isAddress(address)) {
+    return res.status(400).json({ error: "Invalid address" });
+  }
 
-    // Check if the address is eligible
-    if (!eligibleAddresses.has(address)) {
-        return res.status(400).json({ error: "Your address is not eligible for the faucet." });
-    }
+  // Check if the address is eligible
+  if (!eligibleAddresses.has(address)) {
+    return res.status(400).json({ error: "Your address is not eligible for the faucet." });
+  }
 
-    // Check if address has already claimed
-    if (claimedAddresses.has(address)) {
-        return res.status(400).json({ error: "You have already claimed once." });
-    }
+  // Check if address has already claimed
+  if (claimedAddresses.has(address)) {
+    return res.status(400).json({ error: "You have already claimed once." });
+  }
 
-    try {
-        console.log(`🔄 Sending 0.15 MON to ${address}...`);
+  try {
+    console.log(`🔄 Sending 0.15 MON to ${address}...`);
 
-        // Create and send transaction
-        const tx = await wallet.sendTransaction({
-            to: address,
-            value: FAUCET_AMOUNT
-        });
+    // Create and send transaction
+    const tx = await wallet.sendTransaction({
+      to: address,
+      value: FAUCET_AMOUNT,
+    });
 
-        // Wait for confirmation
-        await tx.wait();
-        console.log(`✅ Transaction confirmed: ${tx.hash}`);
+    // Wait for confirmation
+    await tx.wait();
+    console.log(`✅ Transaction confirmed: ${tx.hash}`);
 
-        // Mark the address as claimed
-        claimedAddresses.add(address);
+    // Mark the address as claimed
+    claimedAddresses.add(address);
 
-        res.json({ message: "0.15 MON successfully sent!", txHash: tx.hash });
-    } catch (error) {
-        console.error("❌ Error sending transaction:", error);
-        res.status(500).json({ error: error.message });
-    }
+    res.json({ message: "0.15 MON successfully sent!", txHash: tx.hash });
+  } catch (error) {
+    console.error("❌ Error sending transaction:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Start the server
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Faucet is live at http://localhost:${PORT}`);
+  console.log(`🚀 Faucet is live at http://localhost:${PORT}`);
 });
