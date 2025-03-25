@@ -1,6 +1,6 @@
 // Import required libraries
 const express = require('express');
-const { ethers } = require('ethers'); // Cette ligne importe déjà ethers, donc pas besoin de la redéclarer
+const { ethers } = require('ethers'); // Import ethers properly
 require('dotenv').config(); // Load environment variables
 
 // Initialize Express app
@@ -8,7 +8,7 @@ const app = express();
 app.use(express.json());
 
 // Configure provider and wallet
-const provider = new ethers.JsonRpcProvider("https://testnet-rpc.monad.xyz"); // Replace with your RPC
+const provider = new ethers.JsonRpcProvider("https://testnet-rpc.monad.xyz"); // Correct initialization of the provider
 const PRIVATE_KEY = process.env.PRIVATE_KEY; // Store your private key in a .env file!
 if (!PRIVATE_KEY) {
     console.error("❌ ERROR: Missing private key! Add it to a .env file.");
