@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const faucetUrl = "http://localhost:3000/claim"; // Make sure this is your correct URL
+const faucetUrl = "https://scools-faucet-monad.onrender.com/claim"; // URL de ton service en ligne
 const address = "0x39DF80AD33A7FD0bEc56E41a101F8Dde4023654F";  // The address to receive MON tokens
 
 axios.post(faucetUrl, { address })
