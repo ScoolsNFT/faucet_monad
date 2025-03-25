@@ -91,7 +91,7 @@ app.post('/claim', async (req, res) => {
     const { address } = req.body;
 
     // Validate address
-    if (!address || !ethers.isAddress(address)) {
+    if (!address || !ethers.utils.isAddress(address)) {
         return res.status(400).json({ error: "Invalid address" });
     }
 
