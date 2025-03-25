@@ -8,8 +8,8 @@ const app = express();
 app.use(express.json());
 
 // Configure provider and wallet
-const { JsonRpcProvider } = require('ethers');
-const provider = new JsonRpcProvider("https://testnet-rpc.monad.xyz"); // Replace with your RPC
+const { ethers } = require('ethers');
+const provider = new ethers.JsonRpcProvider("https://testnet-rpc.monad.xyz"); // Replace with your RPC
 const PRIVATE_KEY = process.env.PRIVATE_KEY; // Store your private key in a .env file!
 if (!PRIVATE_KEY) {
     console.error("❌ ERROR: Missing private key! Add it to a .env file.");
