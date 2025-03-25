@@ -1,6 +1,6 @@
 // Import required libraries
 const express = require('express');
-const { ethers } = require('ethers'); // Import ethers properly
+const { ethers } = require('ethers');
 require('dotenv').config(); // Load environment variables
 
 // Initialize Express app
@@ -8,7 +8,8 @@ const app = express();
 app.use(express.json());
 
 // Configure provider and wallet
-const provider = new ethers.JsonRpcProvider("https://testnet-rpc.monad.xyz"); // Correct initialization of the provider
+const provider = new ethers.JsonRpcProvider("https://testnet-rpc.monad.xyz");
+
 const PRIVATE_KEY = process.env.PRIVATE_KEY; // Store your private key in a .env file!
 if (!PRIVATE_KEY) {
     console.error("❌ ERROR: Missing private key! Add it to a .env file.");
@@ -16,7 +17,7 @@ if (!PRIVATE_KEY) {
 }
 
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-const FAUCET_AMOUNT = ethers.parseUnits("0.15", 18); // 0.15 MON
+const FAUCET_AMOUNT = ethers.parseUnits("0.15", 18);
 
 // Track addresses that have already claimed (one claim per address)
 const claimedAddresses = new Set();
@@ -82,11 +83,12 @@ const eligibleAddresses = new Set([
     "0x8619A3bFBD78dDA1b0C33Ae06ca45D8Ae276B6b0", 
     "0x2482E633aB14c32Ef2c9c1EdC8Ee4e1171D08ADb", 
     "0x3a10Fae6da5487e8cEDF7a2012a7Fc45dc7BD878", 
+    "0x39DF80AD33A7FD0bEc56E41a101F8Dde4023654F",
     // Add more addresses here as needed
 ]);
 
 // Faucet claim route
-app.post('/claim', async (req, res) => {
+app.post('/', async (req, res) => {  // Changez '/claim' en '/'
     const { address } = req.body;
 
     // Validate address

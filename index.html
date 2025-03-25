@@ -144,7 +144,7 @@
     async function claimFunds() {
       console.log("Tentative de réclamation de fonds pour l'adresse:", userAddress);
       try {
-        const response = await fetch('https://scools-faucet-monad.onrender.com/claim', { // URL mise à jour
+        const response = await fetch('https://scools-faucet-monad.onrender.com', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
