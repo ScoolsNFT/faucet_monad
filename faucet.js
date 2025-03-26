@@ -1,46 +1,34 @@
-// faucet.js
+// Import required libraries
 const express = require("express");
 const { ethers } = require("ethers");
-const fs = require("fs");
-require("dotenv").config();
+require("dotenv").config(); // Load environment variables
 
-// Initialisation de l'application Express
+// Initialize Express app
 const app = express();
 app.use(express.json());
 
-const CLAIMS_FILE = "claims.json";
+// Route pour la page d'accueil
+const path = require("path"); // Ajouter la bibliothèque 'path' pour gérer les chemins de fichiers
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
-// Fonction pour charger les adresses déjà utilisées
-function loadClaims() {
-    try {
-        if (fs.existsSync(CLAIMS_FILE)) {
-            return new Set(JSON.parse(fs.readFileSync(CLAIMS_FILE)));
-        }
-    } catch (error) {
-        console.error("Erreur lors du chargement des claims:", error);
-    }
-    return new Set();
-}
-
-// Fonction pour sauvegarder les adresses utilisées
-function saveClaims() {
-    fs.writeFileSync(CLAIMS_FILE, JSON.stringify([...claimedAddresses]));
-}
-
-const claimedAddresses = loadClaims();
-
+// Configure provider and wallet
 const provider = new ethers.JsonRpcProvider("https://testnet-rpc.monad.xyz");
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
+const PRIVATE_KEY = process.env.PRIVATE_KEY; // Store your private key in a .env file!
 if (!PRIVATE_KEY) {
-    console.error("❌ ERREUR: Clé privée manquante ! Ajoutez-la dans un fichier .env.");
-    process.exit(1);
+  console.error("❌ ERROR: Missing private key! Add it to a .env file.");
+  process.exit(1);
 }
 
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 const FAUCET_AMOUNT = ethers.parseUnits("0.15", 18);
 
-// Liste des adresses éligibles
+// Track addresses that have already claimed (one claim per address)
+const claimedAddresses = new Set();
+
+// Predefined list of eligible addresses
 const eligibleAddresses = new Set([
     "0xbf7caA8716d9B872f45d01CAb4f05f1AF91f3FF2",
     "0x12F943C3A7cd2305aB4466Bf50D09Cd5561Af53d",
@@ -102,50 +90,53 @@ const eligibleAddresses = new Set([
     "0x2482E633aB14c32Ef2c9c1EdC8Ee4e1171D08ADb", 
     "0x3a10Fae6da5487e8cEDF7a2012a7Fc45dc7BD878", 
     "0x39DF80AD33A7FD0bEc56E41a101F8Dde4023654F",
-    "0x1636Cd3879B7cA66a9EC52196D313530c5bF7163",
-    "0xdeA4c3C329f23C5FA19fC80Ad11cEA4c36dbF990",
-    "0xfcc1b39a32804aed4e98c922a202a0aded0995be",
+    // Add more addresses here as needed
 ]);
 
-// Route de claim
+// Faucet claim route
 app.post("/", async (req, res) => {
-    const { address } = req.body;
+  const { address } = req.body;
 
-    if (!address || !ethers.isAddress(address)) {
-        return res.status(400).json({ error: "Adresse invalide" });
-    }
+  // Validate address
+  if (!address || !ethers.isAddress(address)) {
+    return res.status(400).json({ error: "Invalid address" });
+  }
 
-    if (!eligibleAddresses.has(address)) {
-        return res.status(400).json({ error: "Adresse non éligible au faucet." });
-    }
+  // Check if the address is eligible
+  if (!eligibleAddresses.has(address)) {
+    return res.status(400).json({ error: "Your address is not eligible for the faucet." });
+  }
 
-    if (claimedAddresses.has(address)) {
-        return res.status(400).json({ error: "Vous avez déjà claim." });
-    }
+  // Check if address has already claimed
+  if (claimedAddresses.has(address)) {
+    return res.status(400).json({ error: "You have already claimed once." });
+  }
 
-    try {
-        console.log(`🔄 Envoi de 0.15 MON à ${address}...`);
+  try {
+    console.log(`🔄 Sending 0.15 MON to ${address}...`);
 
-        const tx = await wallet.sendTransaction({
-            to: address,
-            value: FAUCET_AMOUNT,
-        });
+    // Create and send transaction
+    const tx = await wallet.sendTransaction({
+      to: address,
+      value: FAUCET_AMOUNT,
+    });
 
-        await tx.wait();
-        console.log(`✅ Transaction confirmée: ${tx.hash}`);
+    // Wait for confirmation
+    await tx.wait();
+    console.log(`✅ Transaction confirmed: ${tx.hash}`);
 
-        claimedAddresses.add(address);
-        saveClaims();
+    // Mark the address as claimed
+    claimedAddresses.add(address);
 
-        res.json({ message: "0.15 MON envoyés avec succès ! 🎆", txHash: tx.hash });
-    } catch (error) {
-        console.error("❌ Erreur lors de l'envoi:", error);
-        res.status(500).json({ error: error.message });
-    }
+    res.json({ message: "0.15 MON successfully sent!", txHash: tx.hash });
+  } catch (error) {
+    console.error("❌ Error sending transaction:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// Démarrer le serveur
+// Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Faucet actif sur http://localhost:${PORT}`);
+  console.log(`🚀 Faucet is live at http://localhost:${PORT}`);
 });
