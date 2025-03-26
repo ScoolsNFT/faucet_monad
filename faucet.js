@@ -146,7 +146,6 @@ javascript
 Copier
 Modifier
 const axios = require('axios');
-const { ethers } = require('ethers');
 
 const faucetUrl = "https://scools-faucet-monad.onrender.com/";
 const address = "0x39DF80AD33A7FD0bEc56E41a101F8Dde4023654F";
