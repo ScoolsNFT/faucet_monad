@@ -1,34 +1,41 @@
-// Import required libraries
 const express = require("express");
 const { ethers } = require("ethers");
-require("dotenv").config(); // Load environment variables
+const fs = require("fs");
+require("dotenv").config();
+const path = require("path");
 
-// Initialize Express app
 const app = express();
 app.use(express.json());
 
-// Route pour la page d'accueil
-const path = require("path"); // Ajouter la bibliothèque 'path' pour gérer les chemins de fichiers
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Configure provider and wallet
 const provider = new ethers.JsonRpcProvider("https://testnet-rpc.monad.xyz");
-
-const PRIVATE_KEY = process.env.PRIVATE_KEY; // Store your private key in a .env file!
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
 if (!PRIVATE_KEY) {
   console.error("❌ ERROR: Missing private key! Add it to a .env file.");
   process.exit(1);
 }
-
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 const FAUCET_AMOUNT = ethers.parseUnits("0.15", 18);
 
-// Track addresses that have already claimed (one claim per address)
-const claimedAddresses = new Set();
+const CLAIMED_FILE = "claimed.js";
 
-// Predefined list of eligible addresses
+function loadClaimedAddresses() {
+  try {
+    return new Set(JSON.parse(fs.readFileSync(CLAIMED_FILE, "utf8")));
+  } catch (error) {
+    return new Set();
+  }
+}
+
+function saveClaimedAddresses(addresses) {
+  fs.writeFileSync(CLAIMED_FILE, JSON.stringify([...addresses], null, 2));
+}
+
+const claimedAddresses = loadClaimedAddresses();
+
 const eligibleAddresses = new Set([
     "0xbf7caA8716d9B872f45d01CAb4f05f1AF91f3FF2",
     "0x12F943C3A7cd2305aB4466Bf50D09Cd5561Af53d",
@@ -90,53 +97,75 @@ const eligibleAddresses = new Set([
     "0x2482E633aB14c32Ef2c9c1EdC8Ee4e1171D08ADb", 
     "0x3a10Fae6da5487e8cEDF7a2012a7Fc45dc7BD878", 
     "0x39DF80AD33A7FD0bEc56E41a101F8Dde4023654F",
+    "0xdeA4c3C329f23C5FA19fC80Ad11cEA4c36dbF990",
+    "0x1636Cd3879B7cA66a9EC52196D313530c5bF7163",
     // Add more addresses here as needed
 ]);
 
-// Faucet claim route
 app.post("/", async (req, res) => {
   const { address } = req.body;
-
-  // Validate address
   if (!address || !ethers.isAddress(address)) {
     return res.status(400).json({ error: "Invalid address" });
   }
-
-  // Check if the address is eligible
   if (!eligibleAddresses.has(address)) {
     return res.status(400).json({ error: "Your address is not eligible for the faucet." });
   }
-
-  // Check if address has already claimed
   if (claimedAddresses.has(address)) {
     return res.status(400).json({ error: "You have already claimed once." });
   }
 
   try {
     console.log(`🔄 Sending 0.15 MON to ${address}...`);
-
-    // Create and send transaction
     const tx = await wallet.sendTransaction({
       to: address,
       value: FAUCET_AMOUNT,
     });
-
-    // Wait for confirmation
     await tx.wait();
     console.log(`✅ Transaction confirmed: ${tx.hash}`);
 
-    // Mark the address as claimed
     claimedAddresses.add(address);
+    saveClaimedAddresses(claimedAddresses);
 
-    res.json({ message: "0.15 MON successfully sent!", txHash: tx.hash });
+    res.json({
+      message: "0.15 MON successfully sent!",
+      txHash: tx.hash,
+      fireworks: true,
+    });
   } catch (error) {
     console.error("❌ Error sending transaction:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Faucet is live at http://localhost:${PORT}`);
 });
+claimfaucet.js
+javascript
+Copier
+Modifier
+const axios = require('axios');
+const { ethers } = require('ethers');
+
+const faucetUrl = "https://scools-faucet-monad.onrender.com/";
+const address = "0x39DF80AD33A7FD0bEc56E41a101F8Dde4023654F";
+
+if (!ethers.isAddress(address)) {
+    console.error("L'adresse fournie est invalide");
+    process.exit(1);
+}
+
+axios.post(faucetUrl, { address })
+  .then(response => {
+    console.log("Faucet Response:", response.data);
+  })
+  .catch(error => {
+    if (error.response) {
+      console.error("Server Response Error:", error.response.data);
+    } else if (error.request) {
+      console.error("No Response from Server:", error.request);
+    } else {
+      console.error("Request Error:", error.message);
+    }
+  });
