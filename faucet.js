@@ -141,7 +141,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Faucet is live at http://localhost:${PORT}`);
 });
-claimfaucet.js
 javascript
 Copier
 Modifier
