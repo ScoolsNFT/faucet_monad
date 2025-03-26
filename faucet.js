@@ -20,7 +20,7 @@ if (!PRIVATE_KEY) {
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 const FAUCET_AMOUNT = ethers.parseUnits("0.15", 18);
 
-const CLAIMED_FILE = "claimed.js";
+const CLAIMED_FILE = "claimed.json";
 
 function loadClaimedAddresses() {
   try {
