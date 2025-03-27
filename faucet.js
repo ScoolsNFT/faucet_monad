@@ -99,6 +99,7 @@ const eligibleAddresses = new Set([
     "0x39DF80AD33A7FD0bEc56E41a101F8Dde4023654F",
     "0xdeA4c3C329f23C5FA19fC80Ad11cEA4c36dbF990",
     "0x1636Cd3879B7cA66a9EC52196D313530c5bF7163",
+    "0x4427E4c61F88B871F0Cba5857233b8A6e0F912E6",
     // Add more addresses here as needed
 ]);
 
