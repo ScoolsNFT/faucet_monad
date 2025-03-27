@@ -1,3 +1,44 @@
+
+app.post("/", async (req, res) => {
+  const { address } = req.body;
+  if (!address || !ethers.isAddress(address)) {
+    return res.status(400).json({ error: "Invalid address" });
+  }
+  if (!eligibleAddresses.has(address)) {
+    return res.status(400).json({ error: "Your address is not eligible for the faucet." });
+  }
+  if (claimedAddresses.has(address)) {
+    return res.status(400).json({ error: "You have already claimed once." });
+  }
+
+  try {
+    console.log(`🔄 Sending 0.15 MON to ${address}...`);
+    const tx = await wallet.sendTransaction({
+      to: address,
+      value: FAUCET_AMOUNT,
+    });
+    await tx.wait();
+    console.log(`✅ Transaction confirmed: ${tx.hash}`);
+
+    claimedAddresses.add(address);
+    saveClaimedAddresses(claimedAddresses);
+
+    res.json({
+      message: "0.15 MON successfully sent!",
+      txHash: tx.hash,
+      fireworks: true,
+    });
+  } catch (error) {
+    console.error("❌ Error sending transaction:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Faucet is live at http://localhost:${PORT}`);
+});
+
 const express = require("express");
 const { ethers } = require("ethers");
 const fs = require("fs");
@@ -24,7 +65,8 @@ const CLAIMED_FILE = "claimed.json";
 
 function loadClaimedAddresses() {
   try {
-    return new Set(JSON.parse(fs.readFileSync(CLAIMED_FILE, "utf8")));
+    const data = JSON.parse(fs.readFileSync(CLAIMED_FILE, "utf8"));
+    return new Set(data.map(addr => addr.toLowerCase())); // Convertir en minuscules
   } catch (error) {
     return new Set();
   }
@@ -37,71 +79,70 @@ function saveClaimedAddresses(addresses) {
 const claimedAddresses = loadClaimedAddresses();
 
 const eligibleAddresses = new Set([
-    "0xbf7caA8716d9B872f45d01CAb4f05f1AF91f3FF2",
-    "0x12F943C3A7cd2305aB4466Bf50D09Cd5561Af53d",
-    "0x02E830aA23175C947b32E912008F684c426F4094",
-    "0xe37cB7C630cbF110b87073A538D871C7C8Fb93d7",
-    "0xa90764d525A39C00877CEe225bAA3990F914004C",
-    "0x14D41a2Cf4c69133507788Cd6eE1D5809c845e2c",
-    "0xfE46abc2Da7c8437DCfd9fFCD0213742400e2413",
-    "0x1739e13B1D8620516B2fc544b073150378d841a3",
-    "0x38DA312828cbab38bB8AFb498e69283D99Ecf478",
-    "0x8565BE47f3B8173635661d369B0656CBcdACDAC0",
-    "0x83Ef08C2a19E664A6904d3a8B4E9EB455C71AE26",
-    "0x2d924090D4dfB5D4431BA2819be37369e2eB54db", 
-    "0x1AFdc34eB9e6f7b75F691E8237d008Bb004Ee9Cd",
-    "0x707CB24739Ace310909400b39B167cb4fa0FB4c1",
-    "0x1cEea33134257ba65CbcE1B7DE78cf7815073785",
-    "0xBE870cE9E7B55C940F8F27711444d5C5371Df5f9",
-    "0x5212Aab9463023131E4BFDEc462D205550aa55Cd",
-    "0x293A32bF2280b59586A06CdEf3B7D36BF40d808E",
-    "0x8BC80630F03ebcCeD6A397D5b282d1E409C10C7b",
-    "0x74F109366B0C3d2171412c2a8fA7A298E0f64740",
-    "0xd51C2d11c1D574e124215276277Fc012D80b2ED4",
-    "0xfa463f7606315319098b11A9567102421C432001", 
-    "0x36e46f42d31b9dC5E689d9Ced109aE1E04024f6F",
-    "0x707CB24739Ace310909400b39B167cb4fa0FB4c1",
-    "0x194197b5D86CA319d2431853fCF5882b43936014",
-    "0x5De4E95220BA179f11dC1473980D3268e26f4858",
-    "0x5F5A9656EC5faa074351f043968eEA0d1cC63589",
-    "0x032F55Dced3ee70A2A3006eCc220D21E95077582",
-    "0x5d1171BDB3430733CEfcaC423cc363cDC267acB1",
-    "0x2Fa2059A8158dd288C330438F1f8db86f91a0432",
-    "0x8325F5DCfDDD1cbe48510DF5430515ab106f78Bd",
-    "0x7787e37c25926889a9eD81b66b9ADae299a7e821", 
-    "0xD52b997a032e9F0ddEd734BB84589D44c2DDAe9b",
-    "0x7f55C115B2dC0BEEf42F7a48628b2391bFb0ef2B",
-    "0x8445eABa549f062300EF96A385DE2F838C4E0dF4",
-    "0xF0cf6d0FF930b025D83E82bE866198B402CDa53B",
-    "0x3491D8A71E0Ed87Ca061Cf1307BE335bD052E2c4",
-    "0x5297D5fB8f4fff7C27e29307575cCa2b3fBD6Ac4",
-    "0xb00C147f9F0bbF5FfD5c5429608575cc55b428E0",
-    "0x5a9a1ee3F5a43aa3EE14732F759a85BFE8D1B348",
-    "0x5F5A9656EC5faa074351f043968eEA0d1cC63589",
-    "0x9D7fE13325f68179e9F770e705bc5A23F3b8a9e6", 
-    "0x408F03ee5394bF90786C5eBb1658e8946dA4C907",
-    "0x92b6F0e3a6159b8a8cb884f1e192E2cD451d97Db",
-    "0xb1b5fe66152882dfcceb8662a2da879dd1e852b0",
-    "0x5D645644eAf689eC059feFcF5e5c41b9704A9D11",
-    "0xEc93e03607Ed84c00815ca972B72EF17A9830dDb",
-    "0x284D1e6E887FA9FD8271B7B8943BFA91287dEdb0",
-    "0x84b82956e2852e9dE0C144ab5b975876D1F4E959",
-    "0x8d2d2259D4f05020eD15A69f57aA3B96b238FC57",
-    "0xf8d5705A16cA12bd8eB93B06aeA84227A4fC6F3a",
-    "0xF0cf6d0FF930b025D83E82bE866198B402CDa53B", 
-    "0xf3382100A0e2262c3762f6968011cE09Aa178e04", 
-    "0x86bef24E4624Ae331D5967Fa869793B56f878c16", 
-    "0xfcc1b39a32804aed4e98c922a202a0aded0995be", 
-    "0xaffe3F3177BBc8DbdDD85A393A9e2F92FD37EEb0", 
-    "0x8619A3bFBD78dDA1b0C33Ae06ca45D8Ae276B6b0", 
-    "0x2482E633aB14c32Ef2c9c1EdC8Ee4e1171D08ADb", 
-    "0x3a10Fae6da5487e8cEDF7a2012a7Fc45dc7BD878", 
-    "0x39DF80AD33A7FD0bEc56E41a101F8Dde4023654F",
-    "0xdeA4c3C329f23C5FA19fC80Ad11cEA4c36dbF990",
-    "0x4A0677f38919Cac63d5fBaE37a0a93922Ae66604",
-    "0x1636Cd3879B7cA66a9EC52196D313530c5bF7163",
-    "0x4427E4c61F88B871F0Cba5857233b8A6e0F912E6",
-    // Add more addresses here as needed
+"0xbf7caa8716d9b872f45d01cab4f05f1af91f3ff2",
+"0x12f943c3a7cd2305ab4466bf50d09cd5561af53d",
+"0x02e830aa23175c947b32e912008f684c426f4094",
+"0xe37cb7c630cbf110b87073a538d871c7c8fb93d7",
+"0xa90764d525a39c00877cee225baa3990f914004c",
+"0x14d41a2cf4c69133507788cd6ee1d5809c845e2c",
+"0xfe46abc2da7c8437dcfd9ffcd0213742400e2413",
+"0x1739e13b1d8620516b2fc544b073150378d841a3",
+"0x38da312828cbab38b88afb498e69283d99ecf478",
+"0x8565be47f3b8173635661d369b0656cbcdacdac0",
+"0x83ef08c2a19e664a6904d3a8b4e9eb455c71ae26",
+"0x2d924090d4dfb5d4431ba2819be37369e2eb54db",
+"0x1afdc34eb9e6f7b75f691e8237d008bb004ee9cd",
+"0x707cb24739ace310909400b39b167cb4fa0fb4c1",
+"0x1ceea33134257ba65cbce1b7de78cf7815073785",
+"0xbe870ce9e7b55c940f8f27711444d5c5371df5f9",
+"0x5212aab9463023131e4bfdec462d205550aa55cd",
+"0x293a32bf2280b59586a06cdef3b7d36bf40d808e",
+"0x8bc80630f03ebcced6a397d5b282d1e409c10c7b",
+"0x74f109366b0c3d2171412c2a8fa7a298e0f64740",
+"0xd51c2d11c1d574e124215276277fc012d80b2ed4",
+"0xfa463f7606315319098b11a9567102421c432001",
+"0x36e46f42d31b9dc5e689d9ced109ae1e04024f6f",
+"0x707cb24739ace310909400b39b167cb4fa0fb4c1",
+"0x194197b5d86ca319d2431853fcf5882b43936014",
+"0x5de4e95220ba179f11dc1473980d3268e26f4858",
+"0x5f5a9656ec5faa074351f043968eea0d1cc63589",
+"0x032f55dced3ee70a2a3006ecc220d21e95077582",
+"0x5d1171bdb3430733cefcac423cc363cdc267acb1",
+"0x2fa2059a8158dd288c330438f1f8db86f91a0432",
+"0x8325f5dcfddd1cbe48510df5430515ab106f78bd",
+"0x7787e37c25926889a9ed81b66b9adae299a7e821",
+"0xd52b997a032e9f0dded734bb84589d44c2ddae9b",
+"0x7f55c115b2dc0beef42f7a48628b2391bfb0ef2b",
+"0x8445eaba549f062300ef96a385de2f838c4e0df4",
+"0xf0cf6d0ff930b025d83e82be866198b402cda53b",
+"0x3491d8a71e0ed87ca061cf1307be335bd052e2c4",
+"0x5297d5fb8f4fff7c27e29307575cca2b3fbd6ac4",
+"0xb00c147f9f0bbf5ffd5c5429608575cc55b428e0",
+"0x5a9a1ee3f5a43aa3ee14732f759a85bfe8d1b348",
+"0x5f5a9656ec5faa074351f043968eea0d1cc63589",
+"0x9d7fe13325f68179e9f770e705bc5a23f3b8a9e6",
+"0x408f03ee5394bf90786c5ebb1658e8946da4c907",
+"0x92b6f0e3a6159b8a8cb884f1e192e2cd451d97db",
+"0xb1b5fe66152882dfcceb8662a2da879dd1e852b0",
+"0x5d645644eaf689ec059fefcf5e5c41b9704a9d11",
+"0xec93e03607ed84c00815ca972b72ef17a9830ddb",
+"0x284d1e6e887fa9fd8271b7b8943bfa91287dedb0",
+"0x84b82956e2852e9de0c144ab5b975876d1f4e959",
+"0x8d2d2259d4f05020ed15a69f57aa3b96b238fc57",
+"0xf8d5705a16ca12bd8eb93b06aea84227a4fc6f3a",
+"0xf0cf6d0ff930b025d83e82be866198b402cda53b",
+"0xf3382100a0e2262c3762f6968011ce09aa178e04",
+"0x86bef24e4624ae331d5967fa869793b56f878c16",
+"0xfcc1b39a32804aed4e98c922a202a0aded0995be",
+"0xaffe3f3177bbc8dbdd85a393a9e2f92fd37eeb0",
+"0x8619a3bfbd78dda1b0c33ae06ca45d8ae276b6b0",
+"0x2482e633ab14c32ef2c9c1edc8ee4e1171d08adb",
+"0x3a10fae6da5487e8cedf7a2012a7fc45dc7bd878",
+"0x39df80ad33a7fd0bec56e41a101f8dde4023654f",
+"0xdea4c3c329f23c5fa19fc80ad11cea4c36dbf990",
+"0x4a0677f38919cac63d5fbae37a0a93922ae66604",
+"0x1636cd3879b7ca66a9ec52196d313530c5bf7163",
+"0x4427e4c61f88b871f0cba5857233b8a6e0f912e6"
 ]);
 
 app.post("/", async (req, res) => {
@@ -109,10 +150,13 @@ app.post("/", async (req, res) => {
   if (!address || !ethers.isAddress(address)) {
     return res.status(400).json({ error: "Invalid address" });
   }
+
+  const userAddress = address.toLowerCase(); // Convertir l'adresse en minuscules
+
   if (!eligibleAddresses.has(address)) {
     return res.status(400).json({ error: "Your address is not eligible for the faucet." });
   }
-  if (claimedAddresses.has(address)) {
+  if (claimedAddresses.has(userAddress)) {
     return res.status(400).json({ error: "You have already claimed once." });
   }
 
@@ -125,7 +169,7 @@ app.post("/", async (req, res) => {
     await tx.wait();
     console.log(`✅ Transaction confirmed: ${tx.hash}`);
 
-    claimedAddresses.add(address);
+    claimedAddresses.add(userAddress); // Ajouter en minuscules
     saveClaimedAddresses(claimedAddresses);
 
     res.json({
